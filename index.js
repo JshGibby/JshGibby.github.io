@@ -26,6 +26,8 @@ db.exec(`create table if not exists session (
     session varchar(12) not null unique,
     foreign key (id) references account (id) on delete cascade on update cascade)`)
 
+db.exec(`create table if not exists data (data mediumtext)`)
+
 app.use(express.static('static'))
 app.use(bodyParser.urlencoded({extended:true}))
 
@@ -132,6 +134,75 @@ function fromSes(ses, cb) {
         })
     }
 }
+
+function createWorld() {
+    let t = [];
+    for (let y=0; y<40; y++) {
+        t.push([]);
+        for (let x=0; x<40; x++) {
+            t[y].push(0);
+        }
+    }
+    return t;
+}
+
+function createPlayerData(cb) {
+    let t = {};
+    searchAll('account', {}, rows=>{
+        // console.log(rows);
+        rows.forEach(x=>{
+            t[x.id] = {x: 50, y: 50}
+        })
+        // console.log(t);
+        cb(t);
+    })
+}
+
+let world = [];
+
+let playerData = {};
+
+function getData() {
+    searchAll('data', {}, (rows)=>{
+        if (rows.length>0) {
+            // console.log(typeof rows);
+            let row = JSON.parse(rows[0].data);
+            world = row.world;
+            playerData = row.playerData;
+            // console.log(world);
+            // console.log(playerData);
+        }
+        else {
+            world = createWorld();
+            playerData = createPlayerData(data=>{
+                playerData = data;
+                saveData();
+            });
+            // saveData();
+        }
+    })
+}
+
+function saveData() {
+    searchAll('data', {}, (rows)=>{
+        if (rows.length>0) {
+            db.run('update data set data=?', JSON.stringify({world: world, playerData: playerData}), (err)=>{
+                if (err) throw err;
+                console.log('Data saved'.green);
+            })
+        }
+        else {
+            insertRow('data', {data: JSON.stringify({world: world, playerData: playerData})}, ()=>{
+                console.log('Data saved'.green);
+            })
+        }
+    })
+}
+
+getData();
+
+// console.log(world);
+// console.log(playerData);
 
 /*
 Error codes:

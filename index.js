@@ -146,12 +146,14 @@ function createWorld() {
     return t;
 }
 
-function createPlayerData(cb) {
-    let t = {};
+function createPlayerData(base, cb) {
+    let t = base;
     searchAll('account', {}, rows=>{
         // console.log(rows);
         rows.forEach(x=>{
-            t[x.id] = {x: 50, y: 50}
+            if (!t[x.id]) {
+                t[x.id] = {x: 20, y: 20}
+            }
         })
         // console.log(t);
         cb(t);
@@ -169,12 +171,16 @@ function getData() {
             let row = JSON.parse(rows[0].data);
             world = row.world;
             playerData = row.playerData;
+            createPlayerData(playerData, data=>{
+                playerData = data;
+                saveData();
+            });
             // console.log(world);
             // console.log(playerData);
         }
         else {
             world = createWorld();
-            playerData = createPlayerData(data=>{
+            playerData = createPlayerData({}, data=>{
                 playerData = data;
                 saveData();
             });
@@ -186,7 +192,7 @@ function getData() {
 function saveData() {
     searchAll('data', {}, (rows)=>{
         if (rows.length>0) {
-            db.run('update data set data=?', JSON.stringify({world: world, playerData: playerData}), (err)=>{
+            db.run('update data set data=?', [JSON.stringify({world: world, playerData: playerData})], (err)=>{
                 if (err) throw err;
                 console.log('Data saved'.green);
             })
@@ -270,6 +276,7 @@ app.post('/signup', (req, res)=>{
             insertRow('account', {user: body.user, pass: body.pass}, ()=>{
                 searchAll('account', {user: body.user}, (rows)=>{
                     let id = rows[0].id;
+                    playerData[id] = {x: 20, y: 20};
                     res.send(JSON.stringify({success: true}));
                     console.log(`Signup - (user: ${body.user}, pass: ${body.pass})`.green);
                     return;
@@ -289,8 +296,8 @@ io.on('connection', socket=>{
         if (session) {
             fromSes(session, id=>{
                 if (id) {
-                    sockets[id] = socket;
-                    socket.emit('connectPlayerRes', {success: true})
+                    sockets[socket.id] = {id: id, socket: socket};
+                    socket.emit('connectPlayerRes', {success: true, world: world, data: playerData[id]})
                 }
                 else {
                     socket.emit('connectPlayerRes', {success: false, reason: 'session invalid'});

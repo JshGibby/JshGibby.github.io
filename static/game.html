@@ -13,13 +13,19 @@
             const cvs = document.getElementById('cvs');
             const ctx = cvs.getContext('2d');
 
-            cvs.width = 400;
-            cvs.height = 400;
+            const width = 600;
+            const height = 600;
+
+            cvs.width = width;
+            cvs.height = height;
             cvs.style.border = '1px solid black';
 
             const socket = io();
 
             let session = 0;
+
+            let world = [];
+            let data = {};
 
             if (localStorage.getItem('session') && (Date.now()-localStorage.getItem('time'))<7200000) {
                 session = localStorage.getItem('session');
@@ -35,6 +41,10 @@
             socket.on('connectPlayerRes', (res)=>{
                 if (res.success) {
                     console.log('%cConnection success', 'color: green');
+                    world = res.world;
+                    data = res.data;
+                    render();
+                    // console.log(world);
                 }
                 else {
                     console.log(res.reason);
@@ -43,6 +53,20 @@
                     window.location.replace(`${window.location.origin}/login.html`);
                 }
             })
+
+            function render() {
+                world.forEach((y, yi)=>{
+                    y.forEach((x, xi)=>{
+                        ctx.fillStyle = 'lime';
+                        ctx.fillRect(xi*width/y.length, yi*height/world.length, width/y.length, height/world.length);
+                        ctx.strokeStyle = 'black';
+                        ctx.strokeRect(xi*width/y.length, yi*height/world.length, width/y.length, height/world.length);
+                    })
+                })
+                console.log(data);
+                ctx.fillStyle = 'black';
+                ctx.fillRect(data.x*width/world[0].length, data.y*height/world.length, width/world[0].length, height/world.length);
+            }
         </script>
     </body>
 </html>

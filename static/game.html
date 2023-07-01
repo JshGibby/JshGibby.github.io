@@ -4,5 +4,45 @@
     </head>
     <body>
         <h1>Canvas legacy remade</h1>
+        <canvas id='cvs'></canvas>
+        <!-- <script type="module">
+            import { io } from "https://cdn.socket.io/4.3.2/socket.io.esm.min.js";
+        </script> -->
+        <script src="https://cdn.socket.io/4.6.0/socket.io.min.js" integrity="sha384-c79GN5VsunZvi+Q/WObgk2in0CbZsHnjEqvFxC5DxHn9lTfNce2WW6h2pH6u/kF+" crossorigin="anonymous"></script>
+        <script>
+            const cvs = document.getElementById('cvs');
+            const ctx = cvs.getContext('2d');
+
+            cvs.width = 400;
+            cvs.height = 400;
+            cvs.style.border = '1px solid black';
+
+            const socket = io();
+
+            let session = 0;
+
+            if (localStorage.getItem('session') && (Date.now()-localStorage.getItem('time'))<7200000) {
+                session = localStorage.getItem('session');
+            }
+            else {
+                window.location.replace(`${window.location.origin}/login.html`);
+            }
+
+            socket.on('connect', ()=>{
+                socket.emit('connectPlayer', {session: session});
+            })
+
+            socket.on('connectPlayerRes', (res)=>{
+                if (res.success) {
+                    console.log('%cConnection success', 'color: green');
+                }
+                else {
+                    console.log(res.reason);
+                    localStorage.removeItem('session');
+                    localStorage.removeItem('time');
+                    window.location.replace(`${window.location.origin}/login.html`);
+                }
+            })
+        </script>
     </body>
 </html>

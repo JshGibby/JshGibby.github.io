@@ -3,9 +3,13 @@ const bodyParser = require('body-parser');
 const sqlite3 = require('sqlite3').verbose();
 const color = require('colors')
 const fs = require('fs');
+const {createServer} = require('http');
+const {Server} = require('socket.io');
 
 
 const app = express();
+const httpServer = createServer(app);
+const io = new Server(httpServer);
 const port = process.env.PORT || 2050;
 
 const db = new sqlite3.Database('./db/data.db')
@@ -25,18 +29,19 @@ db.exec(`create table if not exists session (
 app.use(express.static('static'))
 app.use(bodyParser.urlencoded({extended:true}))
 
-app.listen(port, ()=>{
+httpServer.listen(port, ()=>{
     console.log(`App running on port ${port}`);
 })
 
+let sockets = {}
 
 const insertRow = (table, data, cb) => {
     let keys = Object.keys(data);
     let values = Object.values(data);
 
     db.run(`insert into ${table} (${keys.join(',')}) values (${Array(values.length).fill('?').join(',')})`, values, (err)=>{
-        if (err) throw err
-        cb()
+        if (err) throw err;
+        cb();
     })
 }
 
@@ -59,7 +64,7 @@ function getSession(user, pass, res, ses) {
         searchAll('session', {session: session}, (rows)=>{
             if (rows.length >= 1) {
                 getSession(user, pass, res, ses);
-                return
+                return;
             }
             else {
                 searchAll('account', {user: user}, (r)=>{
@@ -202,6 +207,30 @@ app.post('/signup', (req, res)=>{
         }
         else {
             res.send(JSON.stringify({success: false, reason: 2}))
+            return;
+        }
+    })
+})
+
+io.on('connection', socket=>{
+    socket.on('connectPlayer', (data)=>{
+        let {session} = data;
+        if (session) {
+            fromSes(session, id=>{
+                if (id) {
+                    sockets[id] = socket;
+                    socket.emit('connectPlayerRes', {success: true})
+                }
+                else {
+                    socket.emit('connectPlayerRes', {success: false, reason: 'session invalid'});
+                    socket.disconnect();
+                    return;
+                }
+            })
+        }
+        else {
+            socket.emit('connectPlayerRes', {success: false, reason: 'session missing'});
+            socket.disconnect();
             return;
         }
     })

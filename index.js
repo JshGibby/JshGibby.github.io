@@ -296,8 +296,8 @@ io.on('connection', socket=>{
         if (session) {
             fromSes(session, id=>{
                 if (id) {
-                    sockets[socket.id] = {id: id, socket: socket};
-                    socket.emit('connectPlayerRes', {success: true, world: world, data: playerData[id]})
+                    sockets[id] = socket;
+                    socket.emit('connectPlayerRes', {success: true, world: world, data: playerData, id: id})
                 }
                 else {
                     socket.emit('connectPlayerRes', {success: false, reason: 'session invalid'});
@@ -310,6 +310,31 @@ io.on('connection', socket=>{
             socket.emit('connectPlayerRes', {success: false, reason: 'session missing'});
             socket.disconnect();
             return;
+        }
+    })
+    socket.on('movement', data=>{
+        // console.log(data);
+        if (data.key && data.session) {
+            fromSes(data.session, id=>{
+                switch (data.key) {
+                    case 'w':
+                        playerData[id].y--;
+                        io.emit('movement', {x: 0, y: -1, id: id})
+                        break;
+                    case 'a':
+                        playerData[id].x--;
+                        io.emit('movement', {x: -1, y: 0, id: id})
+                        break;
+                    case 's':
+                        playerData[id].y++;
+                        io.emit('movement', {x: 0, y: 1, id: id})
+                        break;
+                    case 'd':
+                        playerData[id].x++;
+                        io.emit('movement', {x: 1, y: 0, id: id})
+                        break;
+                }
+            })
         }
     })
 })

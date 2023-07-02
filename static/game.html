@@ -26,6 +26,7 @@
 
             let world = [];
             let data = {};
+            let id = 0;
 
             if (localStorage.getItem('session') && (Date.now()-localStorage.getItem('time'))<7200000) {
                 session = localStorage.getItem('session');
@@ -43,6 +44,7 @@
                     console.log('%cConnection success', 'color: green');
                     world = res.world;
                     data = res.data;
+                    id = res.id;
                     render();
                     // console.log(world);
                 }
@@ -54,7 +56,15 @@
                 }
             })
 
+            socket.on('movement', (res)=>{
+                let {x, y, id} = res;
+                data[id].x += x;
+                data[id].y += y;
+                render();
+            })
+
             function render() {
+                ctx.clearRect(0, 0, width, height);
                 world.forEach((y, yi)=>{
                     y.forEach((x, xi)=>{
                         ctx.fillStyle = 'lime';
@@ -64,9 +74,23 @@
                     })
                 })
                 console.log(data);
-                ctx.fillStyle = 'black';
-                ctx.fillRect(data.x*width/world[0].length, data.y*height/world.length, width/world[0].length, height/world.length);
+                ctx.fillStyle = 'red';
+                for (x in data) {
+                    if (x == id) {
+                        ctx.fillStyle = 'blue';
+                        ctx.fillRect(data[id].x*width/world[0].length, data[id].y*height/world.length, width/world[0].length, height/world.length);
+                        ctx.fillStyle = 'red';
+                        continue;
+                    }
+                    ctx.fillRect(data[x].x*width/world[0].length, data[x].y*height/world.length, width/world[0].length, height/world.length);
+                }
             }
+
+            window.addEventListener('keydown', e=>{
+                if (['w','a','s','d'].includes(e.key)) {
+                    socket.emit('movement', {key: e.key, session: session});
+                } 
+            })
         </script>
     </body>
 </html>

@@ -5,6 +5,9 @@ const color = require('colors')
 const fs = require('fs');
 const {createServer} = require('http');
 const {Server} = require('socket.io');
+const {MOVEABLE} = require('./consts.json')
+
+console.log(MOVEABLE);
 
 
 const app = express();
@@ -140,7 +143,7 @@ function createWorld() {
     for (let y=0; y<40; y++) {
         t.push([]);
         for (let x=0; x<40; x++) {
-            t[y].push(0);
+            t[y].push((y==39||x==39||y==0||x==0)?1:0);
         }
     }
     return t;
@@ -316,22 +319,33 @@ io.on('connection', socket=>{
         // console.log(data);
         if (data.key && data.session) {
             fromSes(data.session, id=>{
+                let pData = playerData[id]
                 switch (data.key) {
                     case 'w':
-                        playerData[id].y--;
-                        io.emit('movement', {x: 0, y: -1, id: id})
+                        // console.log(pData);
+                        // console.log(world[pData.y-1][pData.x]);
+                        if (MOVEABLE.includes(world[pData.y-1][pData.x])) {
+                            pData.y--;
+                            io.emit('movement', {x: 0, y: -1, id: id})
+                        }
                         break;
                     case 'a':
-                        playerData[id].x--;
-                        io.emit('movement', {x: -1, y: 0, id: id})
+                        if (MOVEABLE.includes(world[pData.y][pData.x-1])) {
+                            pData.x--;
+                            io.emit('movement', {x: -1, y: 0, id: id})
+                        }
                         break;
                     case 's':
-                        playerData[id].y++;
-                        io.emit('movement', {x: 0, y: 1, id: id})
+                        if (MOVEABLE.includes(world[pData.y+1][pData.x])) {
+                            pData.y++;
+                            io.emit('movement', {x: 0, y: 1, id: id})
+                        }
                         break;
                     case 'd':
-                        playerData[id].x++;
-                        io.emit('movement', {x: 1, y: 0, id: id})
+                        if (MOVEABLE.includes(world[pData.y][pData.x+1])) {
+                            pData.x++;
+                            io.emit('movement', {x: 1, y: 0, id: id})
+                        }
                         break;
                 }
             })

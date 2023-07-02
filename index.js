@@ -7,7 +7,7 @@ const {createServer} = require('http');
 const {Server} = require('socket.io');
 const {MOVEABLE} = require('./consts.json')
 
-console.log(MOVEABLE);
+// console.log(MOVEABLE);
 
 
 const app = express();
@@ -177,6 +177,7 @@ function getData() {
             createPlayerData(playerData, data=>{
                 playerData = data;
                 saveData();
+                // console.log(world);
             });
             // console.log(world);
             // console.log(playerData);

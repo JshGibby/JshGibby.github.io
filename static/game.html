@@ -9,88 +9,120 @@
             import { io } from "https://cdn.socket.io/4.3.2/socket.io.esm.min.js";
         </script> -->
         <script src="https://cdn.socket.io/4.6.0/socket.io.min.js" integrity="sha384-c79GN5VsunZvi+Q/WObgk2in0CbZsHnjEqvFxC5DxHn9lTfNce2WW6h2pH6u/kF+" crossorigin="anonymous"></script>
+        <script src="sprites.js"></script>
         <script>
-            const cvs = document.getElementById('cvs');
-            const ctx = cvs.getContext('2d');
+            document.body.onload = ()=>{
+                const cvs = document.getElementById('cvs');
+                const ctx = cvs.getContext('2d');
 
-            const width = 600;
-            const height = 600;
+                const width = 600;
+                const height = 600;
 
-            cvs.width = width;
-            cvs.height = height;
-            cvs.style.border = '1px solid black';
+                cvs.width = width-0;
+                cvs.height = height-0;
+                cvs.style.border = '1px solid black';
 
-            const socket = io();
+                const socket = io();
 
-            let session = 0;
+                let session = 0;
 
-            let world = [];
-            let data = {};
-            let id = 0;
+                let world = [];
+                let data = {};
+                let id = 0;
 
-            if (localStorage.getItem('session') && (Date.now()-localStorage.getItem('time'))<7200000) {
-                session = localStorage.getItem('session');
-            }
-            else {
-                window.location.replace(`${window.location.origin}/login.html`);
-            }
-
-            socket.on('connect', ()=>{
-                socket.emit('connectPlayer', {session: session});
-            })
-
-            socket.on('connectPlayerRes', (res)=>{
-                if (res.success) {
-                    console.log('%cConnection success', 'color: green');
-                    world = res.world;
-                    data = res.data;
-                    id = res.id;
-                    render();
-                    // console.log(world);
+                if (localStorage.getItem('session') && (Date.now()-localStorage.getItem('time'))<7200000) {
+                    session = localStorage.getItem('session');
                 }
                 else {
-                    console.log(res.reason);
-                    localStorage.removeItem('session');
-                    localStorage.removeItem('time');
                     window.location.replace(`${window.location.origin}/login.html`);
                 }
-            })
 
-            socket.on('movement', (res)=>{
-                let {x, y, id} = res;
-                data[id].x += x;
-                data[id].y += y;
-                render();
-            })
-
-            function render() {
-                ctx.clearRect(0, 0, width, height);
-                world.forEach((y, yi)=>{
-                    y.forEach((x, xi)=>{
-                        ctx.fillStyle = x==1?'black':'lime';
-                        ctx.fillRect(xi*width/y.length, yi*height/world.length, width/y.length, height/world.length);
-                        ctx.strokeStyle = 'black';
-                        ctx.strokeRect(xi*width/y.length, yi*height/world.length, width/y.length, height/world.length);
-                    })
+                socket.on('connect', ()=>{
+                    socket.emit('connectPlayer', {session: session});
                 })
-                // console.log(data);
-                ctx.fillStyle = 'red';
-                for (x in data) {
-                    if (x == id) {
-                        ctx.fillStyle = 'blue';
-                        ctx.fillRect(data[id].x*width/world[0].length, data[id].y*height/world.length, width/world[0].length, height/world.length);
-                        ctx.fillStyle = 'red';
-                        continue;
-                    }
-                    ctx.fillRect(data[x].x*width/world[0].length, data[x].y*height/world.length, width/world[0].length, height/world.length);
-                }
-            }
 
-            window.addEventListener('keydown', e=>{
-                if (['w','a','s','d'].includes(e.key)) {
-                    socket.emit('movement', {key: e.key, session: session});
-                } 
-            })
+                socket.on('connectPlayerRes', (res)=>{
+                    if (res.success) {
+                        console.log('%cConnection success', 'color: green');
+                        world = res.world;
+                        data = res.data;
+                        id = res.id;
+                        render();
+                        // console.log(world);
+                    }
+                    else {
+                        console.log(res.reason);
+                        localStorage.removeItem('session');
+                        localStorage.removeItem('time');
+                        window.location.replace(`${window.location.origin}/login.html`);
+                    }
+                })
+
+                socket.on('movement', (res)=>{
+                    let {x, y, id} = res;
+                    data[id].x += x;
+                    data[id].y += y;
+                    // console.log(data[id]);
+                    render();
+                })
+
+                function setView() {
+                    let {x, y} = data[id];
+                    let left, right, up, down;
+                    if (x>=7) {
+                        right = Math.min(39, x+8);
+                        left = right-14;
+                    }
+                    else if (x<7) {
+                        left = 0;
+                        right = 14;
+                    }
+                    if (y>=7) {
+                        down = Math.min(39, y+8);
+                        up = down-14;
+                    }
+                    else if (y<7) {
+                        down = 15;
+                        up = 0;
+                    }
+                    // console.log(left, right, up, down)
+                    return [left, right, up, down];
+                }
+
+                function render() {
+                    let view = setView();
+                    ctx.clearRect(0, 0, width, height);
+                    world.slice(view[2], view[3]+1).forEach((y, yi)=>{
+                        // console.log(y.slice(view[0], view[1]+1));
+                        y.slice(view[0], view[1]+1).forEach((x, xi)=>{
+                            // ctx.fillStyle = x==1?'black':'lime';
+                            // ctx.fillRect(xi*width/y.length, yi*height/world.length, width/y.length, height/world.length);
+                            ctx.drawImage(SPRITES, spritePos[textures[x]][0], spritePos[textures[x]][1], spritePos[textures[x]][2], spritePos[textures[x]][3], xi*width/15, yi*height/15, width/15, height/15);
+                            // ctx.drawImage(SPRITES, xi*width/y.length, yi*height/world.length, width/y.length, height/world.length, 0, 0, 15, 15);
+
+                            // ctx.strokeStyle = 'black';
+                            // ctx.strokeRect(xi*width/y.length, yi*height/world.length, width/y.length, height/world.length);
+                        })
+                    })
+                    // console.log(data);
+                    ctx.fillStyle = 'red';
+                    for (x in data) {
+                        if (x == id) {
+                            ctx.fillStyle = 'blue';
+                            ctx.fillRect((data[id].x-view[0])*width/15, (data[id].y-view[2])*height/15, width/15, height/15);
+                            ctx.fillStyle = 'red';
+                            continue;
+                        }
+                        ctx.fillRect((data[x]-view[0])*width/15, (data[x]-view[2])*height/15, width/15, height/15);
+                    }
+                }
+
+                window.addEventListener('keydown', e=>{
+                    if (['w','a','s','d'].includes(e.key)) {
+                        socket.emit('movement', {key: e.key, session: session});
+                    } 
+                })
+            }
         </script>
     </body>
 </html>

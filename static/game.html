@@ -97,7 +97,7 @@
                         y.slice(view[0], view[1]+1).forEach((x, xi)=>{
                             // ctx.fillStyle = x==1?'black':'lime';
                             // ctx.fillRect(xi*width/y.length, yi*height/world.length, width/y.length, height/world.length);
-                            ctx.drawImage(SPRITES, spritePos[textures[x]][0], spritePos[textures[x]][1], spritePos[textures[x]][2], spritePos[textures[x]][3], xi*width/15, yi*height/15, width/15, height/15);
+                            ctx.drawImage(SPRITES, spritePos[textures[x]][0]*16, spritePos[textures[x]][1]*16, spritePos[textures[x]][2], spritePos[textures[x]][3], xi*width/15, yi*height/15, width/15, height/15);
                             // ctx.drawImage(SPRITES, xi*width/y.length, yi*height/world.length, width/y.length, height/world.length, 0, 0, 15, 15);
 
                             // ctx.strokeStyle = 'black';
@@ -108,12 +108,14 @@
                     ctx.fillStyle = 'red';
                     for (x in data) {
                         if (x == id) {
-                            ctx.fillStyle = 'blue';
-                            ctx.fillRect((data[id].x-view[0])*width/15, (data[id].y-view[2])*height/15, width/15, height/15);
-                            ctx.fillStyle = 'red';
+                            // ctx.fillStyle = 'blue';
+                            // ctx.fillRect((data[id].x-view[0])*width/15, (data[id].y-view[2])*height/15, width/15, height/15);
+                            ctx.drawImage(SPRITES, spritePos['PLAYERL'][0]*16, spritePos['PLAYERL'][1]*16, spritePos['PLAYERL'][2], spritePos['PLAYERL'][3], (data[id].x-view[0])*width/15, (data[id].y-view[2])*height/15, width/15, height/15);
+                            // ctx.fillStyle = 'red';
                             continue;
                         }
-                        ctx.fillRect((data[x]-view[0])*width/15, (data[x]-view[2])*height/15, width/15, height/15);
+                        // ctx.fillRect((data[x]-view[0])*width/15, (data[x]-view[2])*height/15, width/15, height/15);
+                        ctx.drawImage(SPRITES, spritePos['PLAYERL'][0]*16, spritePos['PLAYERL'][1]*16, spritePos['PLAYERL'][2], spritePos['PLAYERL'][3], (data[x].x-view[0])*width/15, (data[x].y-view[2])*height/15, width/15, height/15);
                     }
                 }
 
